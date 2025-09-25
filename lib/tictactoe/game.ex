@@ -22,6 +22,10 @@ defmodule TicTacToe.Game do
     GenServer.call(__MODULE__, :get_game_state)
   end
 
+  def reset_game() do
+    GenServer.call(__MODULE__, :reset_game)
+  end
+
   # Server Callbacks
   def init(initial_state) do
     {:ok, initial_state}
@@ -29,6 +33,16 @@ defmodule TicTacToe.Game do
 
   def handle_call(:get_game_state, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call(:reset_game, _from, _state) do
+    initial_state = %{
+      game_board: [:_, :_, :_, :_, :_, :_, :_, :_, :_],
+      current_player: :X,
+      winner: :none
+    }
+
+    {:reply, :ok, initial_state}
   end
 
   def handle_call({:make_move, player, position}, _from, state) do
