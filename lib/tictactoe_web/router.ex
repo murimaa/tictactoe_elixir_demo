@@ -17,7 +17,8 @@ defmodule TictactoeWeb.Router do
   scope "/", TictactoeWeb do
     pipe_through :browser
 
-    live "/", GameLive, :index
+    live "/", LobbyLive, :index
+    live "/game/:key", GameLive, :index
   end
 
   # Other scopes may use custom stacks.

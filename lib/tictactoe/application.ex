@@ -11,8 +11,10 @@ defmodule Tictactoe.Application do
       TictactoeWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:tictactoe, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Tictactoe.PubSub},
-      # Start the TicTacToe game GenServer
-      TicTacToe.Game,
+      # Start the game registry for multiplayer games
+      TicTacToe.GameRegistry,
+      # Start the dynamic supervisor for game processes
+      TicTacToe.GameSupervisor,
       # Start a worker by calling: Tictactoe.Worker.start_link(arg)
       # {Tictactoe.Worker, arg},
       # Start to serve requests, typically the last entry
