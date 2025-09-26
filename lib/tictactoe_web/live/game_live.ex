@@ -59,7 +59,7 @@ defmodule TictactoeWeb.GameLive do
 
     case TicTacToe.MultiplayerGame.make_move(
            socket.assigns.key,
-           socket.assigns.player_id,
+           socket.assigns.player_symbol,
            position
          ) do
       {:ok, _new_board} ->

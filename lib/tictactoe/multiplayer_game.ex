@@ -73,7 +73,15 @@ defmodule TicTacToe.MultiplayerGame do
 
       true ->
         # Assign player symbol based on join order
-        player_symbol = if state.player_count == 0, do: :X, else: :O
+        player_symbol =
+          cond do
+            state.player_count == 0 ->
+              :X
+
+            true ->
+              # Take the symbol that is not already taken
+              ([:X, :O] -- Map.values(state.players)) |> hd()
+          end
 
         new_state = %{
           state
@@ -103,7 +111,7 @@ defmodule TicTacToe.MultiplayerGame do
     end
   end
 
-  def handle_call({:make_move, player_id, position}, _from, state) do
+  def handle_call({:make_move, player_symbol, position}, _from, state) do
     cond do
       not state.game_started ->
         {:reply, {:error, "Game not started - waiting for second player"}, state}
@@ -111,10 +119,7 @@ defmodule TicTacToe.MultiplayerGame do
       state.winner in [:X, :O, :draw] ->
         {:reply, {:error, "Game over, winner: #{state.winner}"}, state}
 
-      not Map.has_key?(state.players, player_id) ->
-        {:reply, {:error, "Player not in this game"}, state}
-
-      state.players[player_id] != state.current_player ->
+      player_symbol != state.current_player ->
         {:reply, {:error, "Not your turn"}, state}
 
       not valid_move?(state, position) ->
@@ -122,7 +127,6 @@ defmodule TicTacToe.MultiplayerGame do
 
       true ->
         # Valid move - update game state
-        player_symbol = state.players[player_id]
         new_game_board = List.replace_at(state.game_board, position, player_symbol)
         winner = check_winner(new_game_board)
         next_player = if player_symbol == :X, do: :O, else: :X
