@@ -20,56 +20,41 @@ defmodule TicTacToe.MultiplayerGame do
         players: %{},
         player_count: 0,
         game_started: false
-      }
+      },
+      name: via_tuple(key)
     )
   end
 
   def join_player(key, player_id) do
-    case TicTacToe.GameRegistry.get_game(key) do
-      {:ok, pid} -> GenServer.call(pid, {:join_player, player_id})
-      {:error, reason} -> {:error, reason}
-    end
+    GenServer.call(via_tuple(key), {:join_player, player_id})
   end
 
   def make_move(key, player_id, position) do
-    case TicTacToe.GameRegistry.get_game(key) do
-      {:ok, pid} -> GenServer.call(pid, {:make_move, player_id, position})
-      {:error, reason} -> {:error, reason}
-    end
+    GenServer.call(via_tuple(key), {:make_move, player_id, position})
   end
 
   def get_game_state(key) do
-    case TicTacToe.GameRegistry.get_game(key) do
-      {:ok, pid} -> GenServer.call(pid, :get_game_state)
-      {:error, reason} -> {:error, reason}
-    end
+    GenServer.call(via_tuple(key), :get_game_state)
   end
 
   def reset_game(key) do
-    case TicTacToe.GameRegistry.get_game(key) do
-      {:ok, pid} -> GenServer.call(pid, :reset_game)
-      {:error, reason} -> {:error, reason}
-    end
+    GenServer.call(via_tuple(key), :reset_game)
   end
 
   def leave_game(key, player_id) do
-    case TicTacToe.GameRegistry.get_game(key) do
-      {:ok, pid} -> GenServer.call(pid, {:leave_game, player_id})
-      {:error, reason} -> {:error, reason}
-    end
+    GenServer.call(via_tuple(key), {:leave_game, player_id})
+  end
+
+  # Helper to create a via_tuple for registry lookups
+  defp via_tuple(name) do
+    {:via, Registry, {TicTacToe.Registry, name}}
   end
 
   # Server Callbacks
   def init(initial_state) do
     # Register this process termination with the registry
-    Process.flag(:trap_exit, true)
+    # Process.flag(:trap_exit, true)
     {:ok, initial_state}
-  end
-
-  def terminate(_reason, state) do
-    # Clean up from registry when terminating
-    TicTacToe.GameRegistry.remove_game(state.key)
-    :ok
   end
 
   def handle_call(:get_game_state, _from, state) do

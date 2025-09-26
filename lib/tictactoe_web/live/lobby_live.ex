@@ -13,10 +13,11 @@ defmodule TictactoeWeb.LobbyLive do
 
   def handle_event("create_game", _params, socket) do
     socket = assign(socket, :loading, true)
+    random_key = generate_random_key()
 
-    case TicTacToe.GameRegistry.create_game() do
-      {:ok, key} ->
-        {:noreply, push_navigate(socket, to: "/game/#{key}")}
+    case TicTacToe.GameSupervisor.start_game(random_key) do
+      {:ok, _pid} ->
+        {:noreply, push_navigate(socket, to: "/game/#{random_key}")}
 
       {:error, reason} ->
         socket =
@@ -43,8 +44,9 @@ defmodule TictactoeWeb.LobbyLive do
       true ->
         socket = assign(socket, :loading, true)
 
-        case TicTacToe.GameRegistry.join_game(key) do
-          {:ok, _pid} ->
+        case TicTacToe.GameSupervisor.start_game(key) do
+          {:error, {:already_started, _pid}} ->
+            # We expect the game to be already started
             {:noreply, push_navigate(socket, to: "/game/#{key}")}
 
           {:error, :game_not_found} ->
@@ -83,6 +85,15 @@ defmodule TictactoeWeb.LobbyLive do
       |> String.slice(0, 4)
 
     {:noreply, assign(socket, :join_key, cleaned_key)}
+  end
+
+  defp generate_random_key() do
+    # Generate a random 4-letter key using uppercase letters
+    letters = ~c"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    1..4
+    |> Enum.map(fn _ -> Enum.random(letters) end)
+    |> List.to_string()
   end
 
   def render(assigns) do

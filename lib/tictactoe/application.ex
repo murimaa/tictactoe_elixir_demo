@@ -12,7 +12,7 @@ defmodule Tictactoe.Application do
       {DNSCluster, query: Application.get_env(:tictactoe, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Tictactoe.PubSub},
       # Start the game registry for multiplayer games
-      TicTacToe.GameRegistry,
+      {Registry, keys: :unique, name: TicTacToe.Registry},
       # Start the dynamic supervisor for game processes
       TicTacToe.GameSupervisor,
       # Start a worker by calling: Tictactoe.Worker.start_link(arg)
