@@ -1,10 +1,9 @@
 defmodule TictactoeWeb.GameLive do
   use TictactoeWeb, :live_view
 
-  def mount(%{"key" => key}, _session, socket) do
-    # Generate a unique player ID for this session
-    player_id = generate_player_id()
-
+  def mount(%{"key" => key}, session, socket) do
+    # Get player ID from session (set by InitializePlayerId plug)
+    player_id = session["player_id"]
     # Subscribe to game updates
     Phoenix.PubSub.subscribe(Tictactoe.PubSub, "game:#{key}")
 
@@ -105,10 +104,6 @@ defmodule TictactoeWeb.GameLive do
     |> assign(:game_started, game_state.game_started)
     |> assign(:player_count, game_state.player_count)
     |> assign(:players, game_state.players)
-  end
-
-  defp generate_player_id do
-    :crypto.strong_rand_bytes(16) |> Base.encode16()
   end
 
   # Helper function to display player marks with emojis

@@ -63,13 +63,13 @@ defmodule TicTacToe.MultiplayerGame do
 
   def handle_call({:join_player, player_id}, _from, state) do
     cond do
-      state.player_count >= 2 ->
-        {:reply, {:error, "Game is full"}, state}
-
       Map.has_key?(state.players, player_id) ->
         # Player already in game, just return their assignment
         player_symbol = state.players[player_id]
         {:reply, {:ok, player_symbol}, state}
+
+      state.player_count >= 2 ->
+        {:reply, {:error, "Game is full"}, state}
 
       true ->
         # Assign player symbol based on join order
