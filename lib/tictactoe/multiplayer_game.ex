@@ -1,5 +1,5 @@
 defmodule TicTacToe.MultiplayerGame do
-  use GenServer
+  use GenServer, restart: :transient
 
   @moduledoc """
   A multiplayer TicTacToe game that supports exactly 2 players.
@@ -52,8 +52,6 @@ defmodule TicTacToe.MultiplayerGame do
 
   # Server Callbacks
   def init(initial_state) do
-    # Register this process termination with the registry
-    # Process.flag(:trap_exit, true)
     {:ok, initial_state}
   end
 
@@ -105,7 +103,12 @@ defmodule TicTacToe.MultiplayerGame do
       }
 
       broadcast_state_update(new_state)
-      {:reply, :ok, new_state}
+      # If new player count is 0, shutdown the game process
+      if new_state.player_count == 0 do
+        {:stop, :normal, :ok, new_state}
+      else
+        {:reply, :ok, new_state}
+      end
     else
       {:reply, {:error, "Player not in game"}, state}
     end
