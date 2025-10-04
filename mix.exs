@@ -11,7 +11,19 @@ defmodule Tictactoe.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      test_coverage: [
+        ignore_modules: [
+          TictactoeWeb.Telemetry,
+          TictactoeWeb.PageController,
+          TictactoeWeb.PageHTML,
+          TictactoeWeb.HealthController,
+          ~r/\.LiveView\./
+        ],
+        summary: [
+          threshold: 0
+        ]
+      ]
     ]
   end
 

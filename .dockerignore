@@ -1,0 +1,47 @@
+# Build artifacts
+_build/
+deps/
+node_modules/
+priv/static/assets/
+
+# Development files
+.elixir_ls/
+.git/
+.gitignore
+test/
+README.md
+AGENTS.md
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs and runtime files
+*.log
+erl_crash.dump
+tmp/
+log/
+
+# Environment files
+.env*
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Coverage and test reports
+cover/
+coverage/

@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - MIX_ENV=prod
+      - PHX_SERVER=true
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-your-secret-key-base-here}
+      - PHX_HOST=${PHX_HOST:-localhost}
+      - PORT=4000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development version with volume mounts
+  web-dev:
+    build:
+      context: .
+      target: builder
+      args: ["MIX_ENV=dev"]
+    ports:
+      - "4000:4000"
+    environment:
+      - MIX_ENV=dev
+      - PHX_SERVER=true
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-your-dev-secret-key-base}
+      - PHX_HOST=localhost
+      - PHX_IP=0.0.0.0
+      - PORT=4000
+    volumes:
+      - .:/app
+      - /app/_build
+      - /app/deps
+      - /app/assets/node_modules
+    command: mix phx.server
+    profiles:
+      - dev
+
+networks:
+  default:
+    name: tictactoe-network

@@ -20,6 +20,30 @@ if System.get_env("PHX_SERVER") do
   config :tictactoe, TictactoeWeb.Endpoint, server: true
 end
 
+# Development configuration for Docker containers
+if config_env() == :dev do
+  # Override IP binding for Docker development
+  dev_ip =
+    case System.get_env("PHX_IP") do
+      "0.0.0.0" ->
+        {0, 0, 0, 0}
+
+      ip when is_binary(ip) ->
+        ip
+        |> String.split(".")
+        |> Enum.map(&String.to_integer/1)
+        |> List.to_tuple()
+
+      # Default to localhost
+      _ ->
+        {127, 0, 0, 1}
+    end
+
+  dev_port = String.to_integer(System.get_env("PORT") || "4000")
+
+  config :tictactoe, TictactoeWeb.Endpoint, http: [ip: dev_ip, port: dev_port]
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
