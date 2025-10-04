@@ -2,35 +2,35 @@ defmodule TictactoeWeb.Router do
   use TictactoeWeb, :router
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, html: {TictactoeWeb.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {TictactoeWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :initialize_player_id do
-    plug TictactoeWeb.Plugs.InitializePlayerId
+    plug(TictactoeWeb.Plugs.InitializePlayerId)
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug(:accepts, ["json"])
   end
 
   live_session :default do
     scope "/", TictactoeWeb do
-      pipe_through [:browser, :initialize_player_id]
+      pipe_through([:browser, :initialize_player_id])
 
-      live "/", LobbyLive, :index
-      live "/game/:key", GameLive, :index
+      live("/", LobbyLive, :index)
+      live("/game/:key", GameLive, :index)
     end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", TictactoeWeb do
-  #   pipe_through :api
-  # end
+  # Simple health check endpoint
+  scope "/" do
+    get("/health", TictactoeWeb.HealthController, :health)
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:tictactoe, :dev_routes) do
@@ -42,10 +42,10 @@ defmodule TictactoeWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through(:browser)
 
-      live_dashboard "/dashboard", metrics: TictactoeWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live_dashboard("/dashboard", metrics: TictactoeWeb.Telemetry)
+      forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 end
