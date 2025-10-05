@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=yes" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <.live_title default="Tictactoe" suffix=" · Phoenix Framework">
       {assigns[:page_title]}
@@ -25,12 +25,12 @@
           setTheme(localStorage.getItem("phx:theme") || "system");
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
-        
+
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
       })();
     </script>
   </head>
-  <body>
+  <body class="antialiased text-gray-900 bg-white touch-manipulation">
     {@inner_content}
   </body>
 </html>

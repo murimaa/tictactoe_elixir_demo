@@ -99,24 +99,24 @@ defmodule TictactoeWeb.LobbyLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
-        <div class="max-w-md w-full space-y-8">
+      <div class="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
+        <div class="max-w-md w-full space-y-6 sm:space-y-8">
           <!-- Header -->
           <div class="text-center">
-            <h1 class="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 mb-4">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 mb-4 leading-tight">
               🎮 TicTacToe
             </h1>
-            <p class="text-xl text-gray-600 mb-8">
+            <p class="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 px-2">
               Play with friends over the network!
             </p>
           </div>
-          
+
     <!-- Game Options Card -->
-          <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+          <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
             <!-- Create New Game -->
             <div class="text-center">
-              <h2 class="text-2xl font-semibold text-gray-800 mb-4">Start a New Game</h2>
-              <p class="text-gray-600 mb-6">
+              <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Start a New Game</h2>
+              <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
                 Create a new game and share the key with your friend
               </p>
 
@@ -124,10 +124,10 @@ defmodule TictactoeWeb.LobbyLive do
                 phx-click="create_game"
                 disabled={@loading}
                 class={[
-                  "w-full px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform",
+                  "w-full px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 transform min-h-[48px]",
                   @loading && "opacity-50 cursor-not-allowed",
                   not @loading &&
-                    "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:from-green-600 hover:to-emerald-600 hover:shadow-xl hover:-translate-y-0.5"
+                    "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:from-green-600 hover:to-emerald-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
                 ]}
               >
                 <%= if @loading do %>
@@ -161,7 +161,7 @@ defmodule TictactoeWeb.LobbyLive do
                 <% end %>
               </button>
             </div>
-            
+
     <!-- Divider -->
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
@@ -171,11 +171,11 @@ defmodule TictactoeWeb.LobbyLive do
                 <span class="px-4 bg-white text-gray-500 font-medium">or</span>
               </div>
             </div>
-            
+
     <!-- Join Existing Game -->
             <div class="text-center">
-              <h2 class="text-2xl font-semibold text-gray-800 mb-4">Join a Game</h2>
-              <p class="text-gray-600 mb-6">
+              <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Join a Game</h2>
+              <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
                 Enter the 4-letter game key to join your friend's game
               </p>
 
@@ -192,10 +192,10 @@ defmodule TictactoeWeb.LobbyLive do
                     phx-change="update_join_key"
                     placeholder="ABCD"
                     maxlength="4"
-                    class="w-full px-4 py-3 text-center text-2xl font-mono font-bold uppercase border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent tracking-widest"
+                    class="w-full px-4 py-4 text-center text-xl sm:text-2xl font-mono font-bold uppercase border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent tracking-widest min-h-[56px]"
                     autocomplete="off"
                   />
-                  <p class="text-sm text-gray-500 mt-2">
+                  <p class="text-xs sm:text-sm text-gray-500 mt-2 px-2">
                     Enter exactly 4 letters (e.g., PLAY, GAME, WXYZ)
                   </p>
                 </div>
@@ -204,11 +204,11 @@ defmodule TictactoeWeb.LobbyLive do
                   type="submit"
                   disabled={@loading or String.length(@join_key) != 4}
                   class={[
-                    "w-full px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform",
+                    "w-full px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 transform min-h-[48px]",
                     (@loading or String.length(@join_key) != 4) &&
                       "opacity-50 cursor-not-allowed bg-gray-400 text-white",
                     not @loading and String.length(@join_key) == 4 &&
-                      "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg hover:from-blue-600 hover:to-indigo-600 hover:shadow-xl hover:-translate-y-0.5"
+                      "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg hover:from-blue-600 hover:to-indigo-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
                   ]}
                 >
                   <%= if @loading do %>
@@ -244,16 +244,30 @@ defmodule TictactoeWeb.LobbyLive do
               </.form>
             </div>
           </div>
-          
+
     <!-- Instructions -->
           <div class="text-center text-gray-600">
-            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <h3 class="font-semibold text-blue-800 mb-2">How it works:</h3>
-              <div class="text-sm text-blue-700 space-y-1">
-                <p>🎮 <strong>Create:</strong> Start a new game and get a 4-letter key</p>
-                <p>📤 <strong>Share:</strong> Send the key to your friend</p>
-                <p>🎯 <strong>Play:</strong> Your friend joins using the key</p>
-                <p>⚡ <strong>Real-time:</strong> See moves instantly!</p>
+            <div class="bg-blue-50 rounded-lg p-4 sm:p-5 border border-blue-200">
+              <h3 class="font-semibold text-blue-800 mb-3 text-sm sm:text-base">How it works:</h3>
+              <div class="text-xs sm:text-sm text-blue-700 space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <p class="flex items-start sm:items-center gap-2">
+                    <span class="text-base">🎮</span>
+                    <span><strong>Create:</strong> Start a new game and get a 4-letter key</span>
+                  </p>
+                  <p class="flex items-start sm:items-center gap-2">
+                    <span class="text-base">📤</span>
+                    <span><strong>Share:</strong> Send the key to your friend</span>
+                  </p>
+                  <p class="flex items-start sm:items-center gap-2">
+                    <span class="text-base">🎯</span>
+                    <span><strong>Play:</strong> Your friend joins using the key</span>
+                  </p>
+                  <p class="flex items-start sm:items-center gap-2">
+                    <span class="text-base">⚡</span>
+                    <span><strong>Real-time:</strong> See moves instantly!</span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
