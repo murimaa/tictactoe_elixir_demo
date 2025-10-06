@@ -16,7 +16,6 @@ PORT="4000"
 ENV_FILE=".env"
 
 # Build configuration
-BUILD_ENV="${BUILD_ENV:-prod}"
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_NAMESPACE="${DOCKER_NAMESPACE}"
 DOCKER_USERNAME="${DOCKER_USERNAME}"
@@ -36,7 +35,6 @@ NC='\033[0m' # No Color
 
 # Parse options
 SKIP_TESTS=false
-PUSH_IMAGE=false
 DEPLOY=false
 VERBOSE=false
 
@@ -44,10 +42,6 @@ for arg in "$@"; do
     case $arg in
         --skip-tests)
             SKIP_TESTS=true
-            shift
-            ;;
-        --push-image)
-            PUSH_IMAGE=true
             shift
             ;;
         --deploy)
@@ -335,209 +329,14 @@ fix_format() {
 }
 
 # =============================================================================
-# BUILD AND PRODUCTION COMMANDS
-# =============================================================================
-
-build_image() {
-    log_step "Building Docker Image"
-    check_docker
-
-    log_info "Building image: $DOCKER_IMAGE"
-
-    docker build \
-        --build-arg BUILD_ENV="$BUILD_ENV" \
-        --build-arg GIT_COMMIT="$GIT_COMMIT" \
-        --build-arg BUILD_NUMBER="$BUILD_NUMBER" \
-        --label "org.opencontainers.image.source=https://$DOCKER_REGISTRY/$DOCKER_NAMESPACE/$APP_NAME" \
-        --label "org.opencontainers.image.revision=$GIT_COMMIT" \
-        --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-        -t "$DOCKER_IMAGE" \
-        .
-
-    log_success "Docker image built successfully"
-    docker images "$APP_NAME" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
-}
-
-prod_start() {
-    log_step "Starting Production Container"
-    check_docker
-    check_env_file
-
-    # Stop existing container if running
-    if container_exists "$CONTAINER_NAME"; then
-        log_info "Stopping existing production container..."
-        safe_container_stop "$CONTAINER_NAME"
-        safe_container_remove "$CONTAINER_NAME"
-    fi
-
-    # Run new container
-    docker run -d \
-        --name "$CONTAINER_NAME" \
-        --env-file "$ENV_FILE" \
-        -p "$PORT:4000" \
-        --restart unless-stopped \
-        "$DOCKER_IMAGE"
-
-    log_success "Production container started: $CONTAINER_NAME"
-    log_info "Application available at http://localhost:$PORT"
-}
-
-prod_stop() {
-    log_info "Stopping production container..."
-
-    if container_exists "$CONTAINER_NAME"; then
-        safe_container_stop "$CONTAINER_NAME"
-        safe_container_remove "$CONTAINER_NAME"
-        log_success "Production container stopped"
-    else
-        log_info "No production container running"
-    fi
-}
-
-prod_logs() {
-    log_info "Showing production logs..."
-
-    if container_running "$CONTAINER_NAME"; then
-        docker logs -f "$CONTAINER_NAME"
-    else
-        log_error "No production container running"
-        log_info "Start with: app.sh prod-start"
-        exit 1
-    fi
-}
-
-release() {
-    log_step "Building Release"
-
-    # Run quality checks first (unless skipped)
-    if [ "$SKIP_TESTS" != true ]; then
-        quality_check
-    fi
-
-    # Build image
-    build_image
-
-    # Test the built image
-    test_image
-
-    # Push to registry if requested
-    if [ "$PUSH_IMAGE" = true ]; then
-        push_image
-    fi
-
-    log_success "Release build completed! 🚀"
-}
-
-test_image() {
-    log_substep "Testing Docker Image"
-
-    local test_port="14000"
-    local test_container="$APP_NAME-test"
-
-    # Clean up any existing test container
-    safe_container_stop "$test_container"
-    safe_container_remove "$test_container"
-
-    # Start test container
-    log_info "Starting test container..."
-    docker run -d --name "$test_container" \
-        -p "$test_port:4000" \
-        -e PHX_SERVER=true \
-        -e SECRET_KEY_BASE="test-secret-key-base-for-image-testing" \
-        -e PHX_HOST=localhost \
-        -e PORT=4000 \
-        "$DOCKER_IMAGE"
-
-    # Wait for container to start
-    log_info "Waiting for application to start..."
-    sleep 10
-
-    # Health check
-    if curl -f -s "http://localhost:$test_port/health" > /dev/null; then
-        log_success "Docker image test passed"
-    else
-        docker logs "$test_container"
-        log_error "Docker image test failed: http://localhost:$test_port/health"
-        safe_container_stop "$test_container"
-        safe_container_remove "$test_container"
-        exit 1
-    fi
-
-    # Cleanup
-    safe_container_stop "$test_container"
-    safe_container_remove "$test_container"
-}
-
-push_image() {
-    log_substep "Pushing to Registry"
-
-    local image_tag="$IMAGE_NAME:$GIT_BRANCH-$GIT_COMMIT"
-    local image_latest="$IMAGE_NAME:$GIT_BRANCH-latest"
-
-    # Tag for registry
-    log_info "Tagging Docker image: $DOCKER_IMAGE -> $image_tag, $image_latest"
-    docker tag "$DOCKER_IMAGE" "$image_tag"
-    docker tag "$DOCKER_IMAGE" "$image_latest"
-
-    # Login to registry if credentials available
-    if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
-        log_info "Logging into Docker registry..."
-        echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
-    fi
-
-    # Push images
-    log_info "Pushing $image_tag..."
-    docker push "$image_tag"
-
-    log_info "Pushing $image_latest..."
-    docker push "$image_latest"
-
-    log_success "Images pushed to registry"
-}
-
-# =============================================================================
 # UTILITY COMMANDS
 # =============================================================================
-
-setup_env() {
-    log_step "Setting up Environment"
-
-    if [ ! -f "$ENV_FILE" ]; then
-        if [ -f ".env.example" ]; then
-            cp .env.example "$ENV_FILE"
-        else
-            cat > "$ENV_FILE" << EOF
-PHX_SERVER=true
-PHX_HOST=localhost
-PORT=4000
-MIX_ENV=prod
-SECRET_KEY_BASE=$(generate_secret)
-EOF
-        fi
-        log_success "Environment file created at $ENV_FILE"
-        log_warning "Please review and update $ENV_FILE before deploying to production"
-    else
-        log_info "Environment file already exists at $ENV_FILE"
-    fi
-}
 
 status() {
     log_step "System Status"
 
     echo ""
     log_info "=== Container Status ==="
-
-    # Production container
-    if container_exists "$CONTAINER_NAME"; then
-        if container_running "$CONTAINER_NAME"; then
-            log_success "Production container '$CONTAINER_NAME' is running"
-            docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-        else
-            log_warning "Production container '$CONTAINER_NAME' exists but is not running"
-        fi
-    else
-        log_info "No production container found"
-    fi
 
     # Development container
     if container_exists "$DEV_CONTAINER_NAME"; then
@@ -568,11 +367,6 @@ status() {
     else
         log_info "No application images found"
     fi
-
-    # System resources
-    echo ""
-    log_info "=== System Resources ==="
-    docker system df
 }
 
 health() {
@@ -599,7 +393,6 @@ cleanup() {
     # Stop all containers
     log_info "Stopping all containers..."
     dev_stop
-    prod_stop
 
     # Remove images if they exist
     if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${DOCKER_IMAGE}$"; then
@@ -630,15 +423,7 @@ ${YELLOW}QUALITY COMMANDS:${NC}
     ${GREEN}fix-format${NC}       Fix code formatting
     ${GREEN}test${NC}             Run tests only
 
-${YELLOW}PRODUCTION COMMANDS:${NC}
-    ${GREEN}build${NC}            Build Docker image
-    ${GREEN}prod-start${NC}       Start production container
-    ${GREEN}prod-stop${NC}        Stop production container
-    ${GREEN}prod-logs${NC}        Show production logs (follow)
-    ${GREEN}release${NC}          Full release pipeline (quality + build + test)
-
 ${YELLOW}UTILITY COMMANDS:${NC}
-    ${GREEN}setup-env${NC}        Setup environment file (.env)
     ${GREEN}status${NC}           Show system status
     ${GREEN}health${NC}           Check application health
     ${GREEN}cleanup${NC}          Clean up all resources
@@ -646,7 +431,6 @@ ${YELLOW}UTILITY COMMANDS:${NC}
 
 ${YELLOW}OPTIONS:${NC}
     ${GREEN}--skip-tests${NC}     Skip test execution
-    ${GREEN}--push-image${NC}     Push image to registry (release command)
     ${GREEN}--verbose, -v${NC}    Verbose output
 
 ${YELLOW}EXAMPLES:${NC}
@@ -658,20 +442,6 @@ ${YELLOW}EXAMPLES:${NC}
     ${CYAN}# Pre-commit workflow${NC}
     $0 fix-format             # Fix formatting
     $0 quality-check          # Run all checks
-
-    ${CYAN}# Production deployment${NC}
-    $0 setup-env              # One-time setup
-    $0 release                # Build production version
-    $0 prod-start             # Run in production mode
-    $0 health                 # Verify it's working
-
-    ${CYAN}# CI/CD workflow${NC}
-    $0 release --push-image   # Full pipeline with registry push
-
-${YELLOW}ENVIRONMENT:${NC}
-    - Edit .env for configuration
-    - Ensure Docker is running
-    - For production: set proper SECRET_KEY_BASE and PHX_HOST
 
 EOF
 }
@@ -712,27 +482,7 @@ main() {
             run_tests
             ;;
 
-        # Production commands
-        build)
-            build_image
-            ;;
-        prod-start)
-            prod_start
-            ;;
-        prod-stop)
-            prod_stop
-            ;;
-        prod-logs)
-            prod_logs
-            ;;
-        release)
-            release
-            ;;
-
         # Utility commands
-        setup-env)
-            setup_env
-            ;;
         status)
             status
             ;;
@@ -744,38 +494,6 @@ main() {
             ;;
         help|--help|-h)
             show_help
-            ;;
-
-        # Legacy aliases (for backwards compatibility)
-        run-dev)
-            log_warning "Command 'run-dev' is deprecated, use 'dev-start'"
-            dev_start
-            ;;
-        run-prod)
-            log_warning "Command 'run-prod' is deprecated, use 'prod-start'"
-            prod_start
-            ;;
-        stop)
-            log_warning "Command 'stop' is deprecated, use 'dev-stop' or 'prod-stop'"
-            dev_stop
-            prod_stop
-            ;;
-        logs)
-            log_warning "Command 'logs' is deprecated, use 'dev-logs' or 'prod-logs'"
-            if container_running "$DEV_CONTAINER_NAME" || docker compose ps -q web-dev > /dev/null 2>&1; then
-                dev_logs
-            else
-                prod_logs
-            fi
-            ;;
-        clean)
-            log_warning "Command 'clean' is deprecated, use 'cleanup'"
-            cleanup
-            ;;
-        deploy)
-            log_warning "Command 'deploy' is deprecated, use 'release' then 'prod-start'"
-            release
-            prod_start
             ;;
 
         "")
