@@ -7,12 +7,9 @@ set -e
 
 # Configuration
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')"
-if [ "$GIT_BRANCH" = "main" ]; then
-    APP_NAME="tictactoe_elixir_demo"
-else
-    APP_NAME="tictactoe_elixir_demo-$GIT_BRANCH"
-fi
-DOCKER_IMAGE="$APP_NAME:latest"
+APP_NAME="tictactoe_elixir_demo"
+
+DOCKER_IMAGE="$APP_NAME:$GIT_BRANCH-latest"
 CONTAINER_NAME="$APP_NAME-web"
 DEV_CONTAINER_NAME="$APP_NAME-dev"
 PORT="4000"
@@ -474,8 +471,8 @@ test_image() {
 push_image() {
     log_substep "Pushing to Registry"
 
-    local image_tag="$IMAGE_NAME:$GIT_COMMIT"
-    local image_latest="$IMAGE_NAME:latest"
+    local image_tag="$IMAGE_NAME:$GIT_BRANCH-$GIT_COMMIT"
+    local image_latest="$IMAGE_NAME:$GIT_BRANCH-latest"
 
     # Tag for registry
     log_info "Tagging Docker image: $DOCKER_IMAGE -> $image_tag, $image_latest"
